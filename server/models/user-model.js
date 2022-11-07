@@ -12,6 +12,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     minLength: 6,
+    maxLength: 100,
+  },
+  password: {
+    type: String,
+    required: true,
+    minLength: 6,
     maxLength: 1024,
   },
   role: {
@@ -25,16 +31,19 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-userSchema.method.isStudent = function () {
-  return thie.role == "student";
+userSchema.methods.isStudent = function () {
+  return this.role == "student";
 };
 
-userSchema.methods.isInstructor = function () {
+userSchema.methods.isIntructor = function () {
   return this.role == "instructor";
 };
 
-// mongoose schema middleware
+userSchema.methods.isAdmin = function () {
+  return this.role == "admin";
+};
 
+// mongoose schema middleare
 userSchema.pre("save", async function (next) {
   if (this.isModified("password") || this.isNew) {
     const hash = await bcrypt.hash(this.password, 10);
@@ -47,7 +56,9 @@ userSchema.pre("save", async function (next) {
 
 userSchema.methods.comparePassword = function (password, cb) {
   bcrypt.compare(password, this.password, (err, isMatch) => {
-    if (err) return cb(err, isMatch);
+    if (err) {
+      return cb(err, isMatch);
+    }
     cb(null, isMatch);
   });
 };

@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const registerValidation = require("../validation").registerValidation;
 const loginValidation = require("../validation").loginValidation;
-const User = require("../models/user-model");
+const User = require("../models").userModel;
 const jwt = require("jsonwebtoken");
 
 router.use((req, res, next) => {
@@ -11,21 +11,21 @@ router.use((req, res, next) => {
 
 router.get("/testAPI", (req, res) => {
   const msgObj = {
-    message: "Test API is working",
+    message: "Test API is working.",
   };
   return res.json(msgObj);
 });
 
 router.post("/register", async (req, res) => {
-  console.log("Register!");
+  // check the validation of data
   const { error } = registerValidation(req.body);
-  if (error) {
-    return res.status(400).send(error.details[0].message);
-  }
+  if (error) return res.status(400).send(error.details[0].message);
+
   // check if the user exists
   const emailExist = await User.findOne({ email: req.body.email });
   if (emailExist)
     return res.status(400).send("Email has already been registered.");
+
   // register the user
   const newUser = new User({
     email: req.body.email,
@@ -45,7 +45,7 @@ router.post("/register", async (req, res) => {
 });
 
 router.post("/login", (req, res) => {
-  //check the validation of data
+  // check the validation of data
   const { error } = loginValidation(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
@@ -59,14 +59,10 @@ router.post("/login", (req, res) => {
       user.comparePassword(req.body.password, function (err, isMatch) {
         if (err) return res.status(400).send(err);
         if (isMatch) {
-          const tokenObject = {
-            _id: user._id,
-            email: user.email,
-          };
+          const tokenObject = { _id: user._id, email: user.email };
           const token = jwt.sign(tokenObject, process.env.PASSPORT_SECRET);
           res.send({ success: true, token: "JWT " + token, user });
         } else {
-          console.log(err);
           res.status(401).send("Wrong password.");
         }
       });
